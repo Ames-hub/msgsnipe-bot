@@ -19,6 +19,13 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
     authors = []
     time_stamps = []
 
+    if not os.path.exists(
+        "data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/"
+    ):
+        os.makedirs("data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/")
+        await ctx.respond("No messages to snipe? >.>")
+        return
+
     msg_list = os.listdir("data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/")
 
     for message in msg_list:
