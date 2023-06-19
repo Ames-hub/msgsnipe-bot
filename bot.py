@@ -3,6 +3,9 @@ from hikari import presences
 
 if not os.path.exists("data/logs/"):
     os.mkdir("data/logs/")
+if not os.path.exists("data/logs/time_tracker"):
+    with open("data/logs/time_tracker", "w+") as f:
+        f.write(time.strftime(standardized_strftime))
 
 @bot.listen()
 async def on_ready(event: hikari.events.ShardReadyEvent):

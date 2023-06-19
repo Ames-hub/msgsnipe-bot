@@ -11,6 +11,10 @@ standardized_strftime = "%H.%M.%S_%d-%m-%Y" # WARNING: Unknown if changing this 
 logs_dir = "data/logs" # Logs directory
 token = os.environ.get("token")
 
+if not os.path.exists("data/logs/time_tracker"):
+    with open("data/logs/time_tracker", "w+") as f:
+        f.write(time.strftime(standardized_strftime))
+
 def botprint(
         message,
         log=True,
