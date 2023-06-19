@@ -1,0 +1,9 @@
+.vscode
+venv
+*.env
+*.log
+time_tracker
+test.py
+data/guilds/
+extensions/inactive
+__pycache__
