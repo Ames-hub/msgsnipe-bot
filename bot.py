@@ -12,7 +12,7 @@ async def on_ready(event: hikari.events.ShardReadyEvent):
     print("Shard is ready!")
 
 bot.load_extensions_from("extensions/active/")
-# bot.load_extensions_from("extensions/tasks_directory/")
+bot.load_extensions_from("extensions/tasks_directory/")
 
 try:
     bot.run(enable_signal_handlers=True, status=presences.Status.IDLE)

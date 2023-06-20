@@ -88,6 +88,12 @@ async def msg_delete(event: hikari.events.GuildMessageDeleteEvent):
             )
             os.remove("data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/test.json")
 
+        api.json.setvalue(
+            dt=msg_dt,
+            json_dir="data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/"+str(event.message_id)+".json",
+            key="del_timestamp",
+            value=time.time(),
+        )
         # Move instead of copy to save space on the disk
         shutil.move(
             src="data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/created/"+str(event.message_id)+".json",

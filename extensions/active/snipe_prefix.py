@@ -49,13 +49,19 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
             key="timestamp",
             default=None
         )
+        del_timestamp = api.json.getvalue(
+            dt=msg_dt,
+            json_dir=jdir,
+            key="del_timestamp",
+            default=None
+        )
 
-        if timestamp == None:
+        if timestamp or del_timestamp == None:
             os.remove(jdir)
             continue
 
         # Checks if the message is too old to be sniped
-        if time.time() - timestamp > time_threshold:
+        if time.time() - del_timestamp > time_threshold:
             continue
 
         content = api.json.getvalue(

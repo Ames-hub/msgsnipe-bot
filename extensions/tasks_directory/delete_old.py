@@ -13,7 +13,7 @@ else:
 
 from ..botlib.botlib import *
 
-@tasks.task(s=5, wait_before_execution=True, auto_start=True)
+@tasks.task(m=1, wait_before_execution=True, auto_start=True)
 async def undefined_task():
     botprint("deleting all old messages")
 
@@ -29,15 +29,34 @@ async def undefined_task():
             for message in msg_list:
                 time_sent = api.json.getvalue(
                     key="timestamp",
-                    json_dir="data/guilds/"+guild+"/channels/"+channel+"/"+message+".json",
+                    json_dir="data/guilds/"+guild+"/channels/"+channel+"/created/"+message+".json",
                     default=time.time(),
                 )
 
                 if time.time() - time_sent >= del_duration:
-                    os.remove("data/guilds/"+guild+"/channels/"+channel+"/"+message+".json")
+                    os.remove("data/guilds/"+guild+"/channels/"+channel+"/created/"+message+".json")
                     del_count += 1
     else:
-        botprint("deleted "+str(del_count)+" messages")
+        botprint("deleted "+str(del_count)+" created messages")
+
+    for guild in guild_list: # each guild will be a folder
+        guild = str(guild)
+        channel_list = os.listdir("data/guilds/"+guild+"/channels/")
+        for channel in channel_list:
+            channel = str(channel)
+            msg_list = os.listdir("data/guilds/"+guild+"/channels/"+channel+"/")
+            for message in msg_list:
+                time_sent = api.json.getvalue(
+                    key="timestamp",
+                    json_dir="data/guilds/"+guild+"/channels/"+channel+"/deleted/"+message+".json",
+                    default=time.time(),
+                )
+
+                if time.time() - time_sent >= del_duration:
+                    os.remove("data/guilds/"+guild+"/channels/"+channel+"/deleted/"+message+".json")
+                    del_count += 1
+    else:
+        botprint("deleted "+str(del_count)+" created messages")
 
 # The name that'll show up when the bot loads the plugin
 ext = "delete_old"

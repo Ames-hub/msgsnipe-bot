@@ -6,6 +6,7 @@ dt = {
     "event_channel": None,
     # Set A time just incase it isn't logged in the msg_create event
     "timestamp": time.time(),
+    "del_timestamp": None, # When the msg was deleted (if it was deleted)
     "author": {
         "uuid": None,
     }
