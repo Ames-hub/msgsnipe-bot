@@ -7,3 +7,4 @@ test.py
 data/guilds/
 extensions/inactive
 __pycache__
+data/logs/

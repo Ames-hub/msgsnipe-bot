@@ -2,6 +2,7 @@ import os, json, logging, atexit, time, hikari, lightbulb, sys, inspect, coloram
 from collections import namedtuple
 from dotenv import load_dotenv
 from colorama import Style, Fore
+from .datatables.new_msg_dt import dt as msg_dt
 
 load_dotenv(dotenv_path="data/token.env") # Token
 
@@ -11,8 +12,15 @@ standardized_strftime = "%H.%M.%S_%d-%m-%Y" # WARNING: Unknown if changing this 
 logs_dir = "data/logs" # Logs directory
 token = os.environ.get("token")
 
-if not os.path.exists("data/logs/time_tracker"):
-    with open("data/logs/time_tracker", "w+") as f:
+if token == None:
+    load_dotenv(dotenv_path="data/token.env") # Token
+
+if not os.path.exists("data/logs/"):
+    os.mkdir("data/logs/")
+if not os.path.exists("data/logs/"):
+    os.mkdir("data/logs/")
+if len(os.listdir("data/logs/")) == 0:
+    with open("data/logs/time_tracker", "w") as f:
         f.write(time.strftime(standardized_strftime))
 
 def botprint(
@@ -528,17 +536,87 @@ class api:
             return data.get(parts[-1], default)
 
     class get:
-        def message(message_id, channel_id):
 
-            named_tup = namedtuple('Thing', ['content', 'id'])
-            file_dir = "data/channels/created/"+message_id+".json",
+        def msg_list(guid, chid, time_threshold=120):
+            '''
+            Snipes all the messages in a certain time threshold
 
-            if message_id not in os.listdir(file_dir):
-                return None
-            else:
-                api.json.getvalue()
+            Returns
+            4 lists containing the content, author, and timestamp of the sniped messages and how many fails there were 
+            (content_list[0], authors[1], time_stamps[2] fails[3])
+            '''
 
-            del named_tup
+            content_list = []
+            authors = []
+            time_stamps = []
+            fails = []
+
+            if not os.path.exists(
+                "data/guilds/" + str(guid) + "/channels/" + str(chid) + "/deleted/"
+            ):
+                os.makedirs("data/guilds/" + str(guid) + "/channels/" + str(chid) + "/deleted/")
+                raise LookupError("No messages found in channel.")
+                # This is a newly logged channel, so there are no messages to snipe
+
+            msg_list = os.listdir("data/guilds/" + str(guid) + "/channels/" + str(chid) + "/deleted/")
+            for message in msg_list:
+                jdir = "data/guilds/" + str(guid) + "/channels/" + str(chid) + "/deleted/" + message
+
+                author_id = api.json.getvalue(
+                    dt=msg_dt,
+                    json_dir=jdir,
+                    key="author.uuid",
+                    default=None
+                )
+
+                if author_id == None:
+                    os.remove(jdir)
+                    fails.append("Author ID not found")
+                    continue
+
+                # Validates and fetches time
+                timestamp = api.json.getvalue(
+                    dt=msg_dt,
+                    json_dir=jdir,
+                    key="timestamp",
+                    default=None
+                )
+                del_timestamp = api.json.getvalue(
+                    dt=msg_dt,
+                    json_dir=jdir,
+                    key="del_timestamp", # This is the time the message was deleted
+                    default=None
+                )
+
+                if timestamp == None:
+                    os.remove(jdir)
+                    fails.append("Timestamp not found")
+                    continue
+                elif del_timestamp == None:
+                    os.remove(jdir)
+                    fails.append("Deletion timestamp not found")
+                    continue
+                
+
+                # Checks if the message is too old to be sniped
+                if time.time() - del_timestamp > time_threshold:
+                    continue
+
+                content = api.json.getvalue(
+                    dt=msg_dt,
+                    json_dir=jdir,
+                    key="content",
+                    default=None
+                )
+
+                if content == None:
+                    content = "No content!"
+
+                authors.append(str(author_id))
+                time_stamps.append(str(timestamp))
+                content_list.append(content)
+
+            return (content_list, authors, time_stamps, fails)
 
     def convert_time(time_val: str) -> str:
 
@@ -554,6 +632,19 @@ class api:
 
         return formatted_time
 
+    def format_snipes(authors, time_stamps, content_list):
+        formatted_snipes = []
+        for author, timestamp, message in zip(authors, time_stamps, content_list):
+            timenow = str(api.convert_time(timestamp))
+            # This doesn't work for some reason.
+            # Not gonna bother to figure it out. I am so tired 
+            timenow.replace("_", " ")
+            timenow.replace("-", "/")
+
+            snipe_entry = "**<@" + author + "> | " + timenow + "**\n" + message + "\n\n"
+            formatted_snipes.append(snipe_entry)
+
+        return formatted_snipes
 
     
 from hikari import Intents

@@ -72,9 +72,7 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
         )
 
         if content == None:
-            os.remove(jdir)
             content = "No content detected!\n||Hint: We can't see images or embeds!||"
-            continue
 
         authors.append(str(author_id))
         time_stamps.append(str(timestamp))

@@ -80,17 +80,12 @@ async def msg_delete(event: hikari.events.GuildMessageDeleteEvent):
     else:
         author_id = str(author_id)
     
-        if not os.path.exists("data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/"+str(event.message_id)+".json"):
-            api.json.getvalue(
-                dt=msg_dt,
-                json_dir="data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/test.json",
-                key="NotActuallyAKey",
-            )
-            os.remove("data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/test.json")
+        if not os.path.exists("data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/"):
+            os.makedirs("data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/", exist_ok=True)
 
         api.json.setvalue(
             dt=msg_dt,
-            json_dir="data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/deleted/"+str(event.message_id)+".json",
+            json_dir="data/guilds/"+str(event.guild_id)+"/channels/"+str(event.channel_id)+"/created/"+str(event.message_id)+".json",
             key="del_timestamp",
             value=time.time(),
         )
