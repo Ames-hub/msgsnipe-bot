@@ -6,27 +6,27 @@ Commands:
 1. snipe
 
 # API
-This bot has a basic API.
-This is the command that is used (Prefix command)
+This bot has a basic API.<br>
+This is the command that is used (Prefix command) to call on a function of the API<br>
 
-apisnipe guild:1057496622138929172 channel:1119693252401049660 time:1200
-Lets break this down
+apisnipe guild:1057496622138929172 channel:1119693252401049660 time:1200<br><br>
+Lets break this down<br>
 ``
 #apisnipe
 ``
-This calls the API section of the bot
+This calls the API section of the bot<br>
 ``
-guild:''
+guild:
 ``
-This section 'guild' refers to which guild to fetch deleted messages from
+This section 'guild' refers to which guild to fetch deleted messages from<br>
 ``
-channel
+channel:
 ``
-Pretty simple. refers to which channel in THAT Guild to fetch from
+Pretty simple. refers to which channel in THAT Guild to fetch from<br>
 ``
-time
+time:
 ``
-Again, simple. How many seconds in the past should we look back for? 60? 120? 1200? It can be any number
+Again, simple. How many seconds in the past should we look back for? 60? 120? 1200? It can be any number<br>
 
 Support server: https://discord.gg/HkKAsgvCzt
 
