@@ -2,22 +2,23 @@ from ..botlib.botlib import *
 import lightbulb
 from ..botlib.datatables.new_msg_dt import dt as msg_dt
 
-time_threshold = 45
-
 # Refers to being a child from the def in the group assigner template
 @bot.command
 @lightbulb.app_command_permissions(dm_enabled=False)
 # enter the lines below this with options for the child if desired
 # Adds a cooldown to the command
 @lightbulb.add_cooldown(bucket=lightbulb.buckets.GuildBucket, length=5, uses=1)
+@lightbulb.option(
+    name="time",
+    description="The time in seconds to snipe back to",
+    type=hikari.OptionType.INTEGER,
+    required=False
+)
 @lightbulb.command("snipe", "Get the last deleted message")
 # Its a "slash sub command" opposed to a slash command in a group
 @lightbulb.implements(lightbulb.PrefixCommand)
 # The command its self. Change "template" to the name of the group
 async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
-    content_list = []
-    authors = []
-    time_stamps = []
 
     if not os.path.exists(
         "data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/"
@@ -26,74 +27,65 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
         await ctx.respond("No messages to snipe? >.>")
         return
 
-    msg_list = os.listdir("data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/")
+    try:
+        time_threshold = ctx.options.time
+        if time_threshold == None:
+            time_threshold = 120
+        else:
+            time_threshold = int(time_threshold)
+    except:
+        time_threshold = 120
 
-    for message in msg_list:
-        jdir = "data/guilds/" + str(ctx.guild_id) + "/channels/" + str(ctx.channel_id) + "/deleted/" + message
+    msg_list = api.get.msg_list(
+        guid=ctx.guild_id,
+        chid=ctx.channel_id,
+        time_threshold=time_threshold,
+        deleted=True,
+        created=False
+    )
 
-        author_id = api.json.getvalue(
-            dt=msg_dt,
-            json_dir=jdir,
-            key="author.uuid",
-            default=None
-        )
+    message_list = []
 
-        if author_id == None:
-            os.remove(jdir)
-            continue
-
-        # Validates and fetches time
-        timestamp = api.json.getvalue(
-            dt=msg_dt,
-            json_dir=jdir,
-            key="timestamp",
-            default=None
-        )
-        del_timestamp = api.json.getvalue(
-            dt=msg_dt,
-            json_dir=jdir,
-            key="del_timestamp",
-            default=None
-        )
-
-        if timestamp or del_timestamp == None:
-            os.remove(jdir)
-            continue
-
-        # Checks if the message is too old to be sniped
-        if time.time() - del_timestamp > time_threshold:
-            continue
-
-        content = api.json.getvalue(
-            dt=msg_dt,
-            json_dir=jdir,
-            key="content",
-            default=None
-        )
-
-        if content == None:
-            content = "No content detected!\n||Hint: We can't see images or embeds!||"
-
-        authors.append(str(author_id))
-        time_stamps.append(str(timestamp))
-        content_list.append(content)
-
-    formatted_snipes = []
-    for author, timestamp, message in zip(authors, time_stamps, content_list):
-        timenow = str(api.convert_time(timestamp))
-        # This doesn't work for some reason.
-        # Not gonna bother to figure it out. I am so tired 
-        timenow.replace("_", " ")
-        timenow.replace("-", "/")
-
-        snipe_entry = "**<@" + author + "> | " + timenow + "**\n" + message + "\n\n"
-        formatted_snipes.append(snipe_entry)
-
-    if formatted_snipes:
-        await ctx.respond(str(len(formatted_snipes)) + " Messages Sniped >:D")
-        await ctx.respond("\n".join(formatted_snipes))
-    else:
+    print(msg_list)
+    if len(msg_list) == 0:
         await ctx.respond("No messages to snipe? >.>")
+        return
+    else:
+        for msg in msg_list:
+
+            msgd = {
+                "content": msg[0],
+                "author": msg[1],
+                "time": msg[2],
+            }
+
+            # The embed that'll be sent
+            await ctx.respond(
+                "Sniped messages found! >:D",
+            )
+            for page in message_list:
+                embed = hikari.Embed(
+                    title="Sniped messages",
+                    description="Here are the sniped messages",
+                    color=0x00FF00
+                )
+                for msg in page:
+                    embed.add_field(
+                        name="Message",
+                        value=msgd.content,
+                        inline=False
+                    )
+                    embed.add_field(
+                        name="Author",
+                        value=msgd.author,
+                        inline=False
+                    )
+                    embed.add_field(
+                        name="Time",
+                        value=msgd.time,
+                        inline=False
+                    )
+                await ctx.respond(embed=embed)
 
 @snipe_command.set_error_handler
 async def template_error_handler(event: lightbulb.CommandErrorEvent):
@@ -104,11 +96,11 @@ async def template_error_handler(event: lightbulb.CommandErrorEvent):
             str(int(exception.retry_after))+" seconds until you can use this again.\nSorry!"
         )
         return True
-    # elif isinstance(exception, ValueError):
-    #     await event.context.respond(
-    #         "So sorry, but a message couldn't be sniped due to time calculation errors"
-    #     )
-    #     return True
+    elif isinstance(exception, ValueError):
+        await event.context.respond(
+            "sorry, but a message couldn't be sniped due to time calculation errors"
+        )
+        return True
 
 # The name that'll show up when the bot loads the plugin
 ext = "template"

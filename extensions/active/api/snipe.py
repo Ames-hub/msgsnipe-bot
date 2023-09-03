@@ -1,24 +1,21 @@
 from ...botlib.botlib import *
 import lightbulb
 
-# Refers to being a child from the def in the group assigner template
-@bot.command
-@lightbulb.app_command_permissions(dm_enabled=True)
-# enter the lines below this with options for the child if desired
-# Adds a cooldown to the command
-@lightbulb.add_cooldown(bucket=lightbulb.buckets.GuildBucket, length=5, uses=1)
-@lightbulb.command("apisnipe", "Fetch a series of deleted messages")
-# Its a "slash sub command" opposed to a slash command in a group
-@lightbulb.implements(lightbulb.PrefixCommand)
-# The command its self. Change "template" to the name of the group
-async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
-    
-    # As this is a API command, Only bots can use it
-    if not ctx.user.is_bot:
+@bot.listen()
+async def snipe_command(ctx: hikari.MessageCreateEvent) -> None:
+
+    if ctx.content.startswith("#apisnipe") == False:
+        return
+
+    content = str(ctx.content)
+
+    if not ctx.is_bot and ctx.author.id != 913574723475083274 and "debug" not in content.lower():
+        await ctx.message.respond("Only bots can access this command")
+        return
+    elif ctx.author.is_bot and "debug" in content.lower():
+        await ctx.message.respond("Debug access denied")
         return
     
-    content = str(ctx.event.content)
-
     split_content = content.split(" ")
     # Finds the guild_id
     for word in split_content:
@@ -63,23 +60,24 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
 
     try:
         if guild_id == None:
-            await ctx.respond("Missing guild id")
+            await ctx.message.respond("Missing guild id\nSyntax: ``guild:(guild_id)``")
             return
     except UnboundLocalError:
-        await ctx.respond("Missing guild id")
+        await ctx.message.respond("Missing guild id\nSyntax: ``guild:(guild_id)``")
         return
     try:
         if channel_id == None:
-            await ctx.respond("Missing channel id") # Verifies all required arguments are present
+            await ctx.message.respond("Missing channel id\nSyntax: ``channel:(channel_id)``") # Verifies all required arguments are present
             return
     except UnboundLocalError:
-        await ctx.respond("Missing channel id")
+        await ctx.message.respond("Missing channel id\nSyntax: ``channel:(channel_id)``")
+        return
     try:
         if channel_id == None and guild_id == None:
-            await ctx.respond("Missing guild and channel id")
+            await ctx.message.respond("Missing guild and channel id")
             return
     except UnboundLocalError:
-        await ctx.respond("Missing guild and channel id")
+        await ctx.message.respond("Missing guild and channel id")
         return
 
     try:
@@ -93,6 +91,8 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
         chid=channel_id,
         time_threshold=time_threshold
     )
+    if returned_list == "ERR: INVALID TIME THRESHOLD":
+        await ctx.message.respond("Invalid time threshold")
     
     # unpacks the list
     content_list = returned_list[0]
@@ -103,35 +103,18 @@ async def snipe_command(ctx: lightbulb.PrefixContext) -> None:
 
     # If there are no messages to snipe, return
     if len(author_list) == 0:
-        await ctx.respond("None")
+        await ctx.message.respond("None")
         return
     
     # else, send the messages
     def _format_msgs(author_list, content_list, time_stamps):
         for i in range(len(author_list)):
             if mention == False:
-                yield "author:'"+author_list[i]+"' time_stamp:'"+str(time_stamps[i])+"' content:"+content_list[i]
+                yield "author:'"+author_list[i]+"' time_stamp:'"+str(time_stamps[i])+"' content:'"+content_list[i]+"'"
             elif mention == True:
-                yield "author:'<@!"+author_list[i]+">' time_stamp:'"+str(time_stamps[i])+"' content:"+content_list[i]+" mention:"+author_list[i]
+                yield "author:'<@!"+author_list[i]+">' time_stamp:'"+str(time_stamps[i])+"' uuid:"+author_list[i]+" content:'"+content_list[i]+"'"
 
-    await ctx.respond("\n".join(_format_msgs(author_list, content_list, time_stamps)))
-
-@snipe_command.set_error_handler
-async def template_error_handler(event: lightbulb.CommandErrorEvent):
-    exception = event.exception.__cause__ or event.exception
-    # The handler for if the bot command is on cooldown
-    if isinstance(exception, lightbulb.CommandIsOnCooldown):
-        await event.context.respond(
-            str(int(exception.retry_after))+" seconds until you can use this again.\nSorry!"
-        )
-        return True
-    elif isinstance(exception, lightbulb.NotEnoughArguments):
-        await event.context.respond("Missing Arguments\n"+ str(exception.missing_options))
-    # elif isinstance(exception, ValueError):
-    #     await event.context.respond(
-    #         "So sorry, but a message couldn't be sniped due to time calculation errors"
-    #     )
-    #     return True
+    await ctx.message.respond(list(_format_msgs(author_list, content_list, time_stamps)))
 
 # The name that'll show up when the bot loads the plugin
 ext = "api_snipe"

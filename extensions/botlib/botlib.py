@@ -1,5 +1,4 @@
 import os, json, logging, atexit, time, hikari, lightbulb, sys, inspect, colorama, shutil
-from collections import namedtuple
 from dotenv import load_dotenv
 from colorama import Style, Fore
 from .datatables.new_msg_dt import dt as msg_dt
@@ -537,19 +536,29 @@ class api:
 
     class get:
 
-        def msg_list(guid, chid, time_threshold=120):
+        def msg_list(guid, chid, time_threshold=120, deleted=False, created=False):
             '''
             Snipes all the messages in a certain time threshold
 
             Returns
             4 lists containing the content, author, and timestamp of the sniped messages and how many fails there were 
             (content_list[0], authors[1], time_stamps[2] fails[3])
+
+            args:
+            guid: guild id
+            chid: channel id
+            time_threshold: time threshold in seconds
+            deleted: whether to snipe deleted messages
+            created: whether to snipe created messages
             '''
 
             content_list = []
             authors = []
             time_stamps = []
             fails = []
+
+            if deleted == False and created == False:
+                raise Warning("You tried to snipe neither deleted or created messages. This will return an empty list.")
 
             if not os.path.exists(
                 "data/guilds/" + str(guid) + "/channels/" + str(chid) + "/deleted/"
@@ -597,10 +606,12 @@ class api:
                     fails.append("Deletion timestamp not found")
                     continue
                 
-
                 # Checks if the message is too old to be sniped
-                if time.time() - del_timestamp > time_threshold:
-                    continue
+                try:
+                    if time.time() - del_timestamp > float(time_threshold):
+                        continue
+                except ValueError:
+                    return "ERR: INVALID TIME THRESHOLD"
 
                 content = api.json.getvalue(
                     dt=msg_dt,
@@ -614,9 +625,9 @@ class api:
 
                 authors.append(str(author_id))
                 time_stamps.append(str(timestamp))
-                content_list.append(content)
+                content_list.append(str(content))
 
-            return (content_list, authors, time_stamps, fails)
+            return [content_list, authors, time_stamps]
 
     def convert_time(time_val: str) -> str:
 
